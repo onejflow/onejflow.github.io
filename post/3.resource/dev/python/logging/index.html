@@ -4,177 +4,177 @@
 <strong class="css-truncate css-truncate-target mr-1" style=max-width:410px><a href=https://onejflow.github.io/post/3.resource/dev/python/logging/>[Python] 프로젝트 log 관리를 위한 logging</a></strong></h1><div class="note m-0">Created <relative-time datetime="Mon, 28 Jul 2025 00:00:00 +0000" class=no-wrap>Mon, 28 Jul 2025 00:00:00 +0000</relative-time>
 <span class=file-info-divider></span>
 Modified <relative-time datetime="Mon, 28 Jul 2025 00:00:00 +0000" class=no-wrap>Mon, 28 Jul 2025 00:00:00 +0000</relative-time></div></div></div></div></div></div></div><div class="container-lg px-3 new-discussion-timeline"><div class="repository-content gist-content"><div><div class="js-gist-file-update-container js-task-list-container file-box"><div id=file-pytest class="file my-2"><div id=post-header class="file-header d-flex flex-md-items-center flex-items-start sticky-header" style=z-index:2><div class="file-info d-flex flex-md-items-center flex-items-start flex-order-1 flex-auto"><div class="text-mono f6 flex-auto pr-3 flex-order-2 flex-md-order-1 mt-2 mt-md-0"><summary id=toc-toggle onclick=clickToc() class="btn btn-octicon m-0 mr-2 p-2"><svg aria-hidden="true" viewBox="0 0 16 16" height="16" width="16" class="octicon octicon-list-unordered"><path fill-rule="evenodd" d="M2 4a1 1 0 100-2 1 1 0 000 2zm3.75-1.5a.75.75.0 000 1.5h8.5a.75.75.0 000-1.5h-8.5zm0 5a.75.75.0 000 1.5h8.5a.75.75.0 000-1.5h-8.5zm0 5a.75.75.0 000 1.5h8.5a.75.75.0 000-1.5h-8.5zM3 8A1 1 0 111 8a1 1 0 012 0zm-1 6a1 1 0 100-2 1 1 0 000 2z"/></svg></summary><details-menu class=SelectMenu id=toc-details style="display: none;"><div class="SelectMenu-modal rounded-3 mt-1" style=max-height:340px><div class="SelectMenu-list SelectMenu-list--borderless p-2" style=overscroll-behavior:contain id=toc-list></div></div></details-menu>2495 Words</div><div class="file-actions flex-order-2 pt-0"><a class="muted-link mr-3" href=/tags/python><svg class="octicon octicon-tag" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M2.5 7.775V2.75a.25.25.0 01.25-.25h5.025a.25.25.0 01.177.073l6.25 6.25a.25.25.0 010 .354l-5.025 5.025a.25.25.0 01-.354.0l-6.25-6.25A.25.25.0 012.5 7.775zm-1.5.0V2.75C1 1.784 1.784 1 2.75 1h5.025c.464.0.91.184 1.238.513l6.25 6.25a1.75 1.75.0 010 2.474l-5.026 5.026a1.75 1.75.0 01-2.474.0l-6.25-6.25A1.75 1.75.0 011 7.775zM6 5a1 1 0 100 2 1 1 0 000-2z"/></svg>
-Python</a></div></div></div><div class="Box-body px-5 pb-5" style=z-index:1><article class="markdown-body entry-content container-lg"><p>로깅에 대한 기본적인 개념은 다음 공식문서를 통해 확인하였다.<br><a href=https://docs.python.org/3/howto/logging.html>Logging HOWTO — Python 3.13.5 documentation</a></p><h1 id=logging-을-이용한-로그관리>logging 을 이용한 로그관리</h1><h3 id=python-logging-모듈-주요-구성요소>Python logging 모듈 주요 구성요소</h3><ol><li><code>class logging.Logger</code><ul><li>Logger.setLevel(), Logger.addHandler(), Logger.addFilter() 등을 사용할 수 있게 한다.</li><li>Logger는 <strong><em>Singleton 패턴</em></strong> 이다. 즉, <code>getLogger</code>를 한다고 매번 새로운 instance가 return되는게 아니라 이미 그 이름으로 존재하는 Logger를 return 한다.</li><li>그리고 <strong><em>Observer 패턴</em></strong> 을 동시에 따르며, 로그 레코드가 생성될 때 로그 핸들러(Observer) 객체에 자동으로 알림(event catch)을 보냄. 로그 레코드 생성자는 로그 레코드가 생성되면 모든 등록된 옵저버(핸들러)에게 보낸다.</li><li>메시지를 생성하는 시점에 <strong><em>&ldquo;thread-safe&rdquo;</em></strong> 하게 처리된다.</li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>logger <span style=color:#f92672>=</span> logging<span style=color:#f92672>.</span>getLogger(<span style=color:#e6db74>&#34;로거이름&#34;</span>)
-</span></span></code></pre></div></li><li><code>class logging.Filter</code><ul><li>출력될 로그를 필터링한다. 별도 클래스로 필터링 로직을 작성하고 이미 생성한 로거나 핸들러에 addFilter() 메서드로 추가한다.</li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>CustomFilter</span>(logging<span style=color:#f92672>.</span>Filter):
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filter</span>(self, record):
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#39;skip-this&#39;</span> <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> record<span style=color:#f92672>.</span>msg
-</span></span></code></pre></div></li><li><code>class logging.Formatter</code><ul><li>출력될 로그의 포맷을 설정하며 다양한 포맷이 있으므로 공식문서를 참고하는게 좋다.</li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span> formatter <span style=color:#f92672>=</span> logging<span style=color:#f92672>.</span>Formatter(
-</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;</span><span style=color:#e6db74>%(asctime)s</span><span style=color:#e6db74> - </span><span style=color:#e6db74>%(name)s</span><span style=color:#e6db74> - </span><span style=color:#e6db74>%(levelname)s</span><span style=color:#e6db74> - </span><span style=color:#e6db74>%(message)s</span><span style=color:#e6db74>&#39;</span>
-</span></span><span style=display:flex><span>    )
-</span></span><span style=display:flex><span><span style=color:#75715e># 결과 예시 </span>
-</span></span><span style=display:flex><span><span style=color:#75715e># 2025-07-05 12:57:27,599 - src.trade_executor - INFO - This is message</span>
-</span></span></code></pre></div></li><li><code>class logging.Handler</code><ul><li>로그 메세지를 처리할 방식을 설정한다.</li><li>주로 StreamHandler(콘솔창에 로그 메세지 출력)와 FileHandler(로그 메세지 저장)를 사용한다.<ul><li>FileHandler의 경우 지정된 단일 파일에 계속 추가하여 로그 파일의 크기를 제한하지 않기 때문에 주의가 필요하며 이를 위해 RotatingFileHandler를 사용한다.</li><li>RotatingFileHandler는 로그 파일의 크기를 관리하고, 오래된 로그 파일을 일정 개수만큼만 유지하여 디스크 공간을 효율적으로 사용하게 해준다.</li></ul></li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#75715e># 콘솔창에 출력하는 핸들러 설정</span>
-</span></span><span style=display:flex><span>console_handler <span style=color:#f92672>=</span> logging<span style=color:#f92672>.</span>StreamHandler()
-</span></span><span style=display:flex><span><span style=color:#75715e># my_app.log 파일에 로그 기록</span>
-</span></span><span style=display:flex><span>file_handler <span style=color:#f92672>=</span> logging<span style=color:#f92672>.</span>FileHandler(<span style=color:#e6db74>&#39;my_app.log&#39;</span>) 
-</span></span><span style=display:flex><span><span style=color:#75715e># maxBytes=1024*1024 (1MB), backupCount=3 (최대 3개의 백업 파일 유지)</span>
-</span></span><span style=display:flex><span>rotate_handler <span style=color:#f92672>=</span> RotatingFileHandler(<span style=color:#e6db74>&#39;my_app_rotating.log&#39;</span>, maxBytes<span style=color:#f92672>=</span><span style=color:#ae81ff>1024</span><span style=color:#f92672>*</span><span style=color:#ae81ff>1024</span>, backupCount<span style=color:#f92672>=</span><span style=color:#ae81ff>3</span>) 
-</span></span></code></pre></div></li></ol><h3 id=로그레벨>로그레벨</h3><ul><li>DEBUG<ul><li>개발/테스트 단계에서 각 기능이 올바르게 작동하는지 확인할 때 사용하는 수준, 실제 운영 중에 남기지 않을 로그</li></ul></li><li>INFO<ul><li>실제 운영 중인 프로그램을 실행할 때 발생하는 정상적인 이벤트 알림</li><li>각 기능의 시작, 종료 시점, 반드시 알아야하는 정보들을 INFO 수준으로</li></ul></li><li>WARNING<ul><li>현재는 괜찮지만 잠재적으로 문제가 될 수 있는 작동일 때 남기는 로그 수준</li><li>예를 들면 ML 모델의 예측값이 상정했던 범위 밖</li><li>WARN 수준의 로그는 기록되더라도 프로그램의 실행이 중단되지 않음</li></ul></li><li>ERROR<ul><li>프로그램이 정상 작동하지 않았을 경우 사용</li><li>심각한 오류나 예외 상황에 대해서만 사용 -> 즉각적인 조치 필요</li><li>WARN 수준과 확실한 구분이 필요함</li></ul></li><li>CRITICAL<ul><li>심각한 오류이며 프로그램 자체가 계속 실행되지 않을 수 있을 때</li></ul></li></ul><p>Python의 logging 모듈의 기본 로깅 수준은 <code>WARNING</code> 이다. 그렇기에 이 수준 또는 그보다 심각한 수준의 일은 자동으로 로그로 남는다. basicConfig 메서드로 기본 로깅 수준 변경이 가능하다.</p><h3 id=python-로그-예시>Python 로그 예시</h3><p>로깅 모듈 작성 및 설정하는 logging_config.py</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> logging
-</span></span><span style=display:flex><span><span style=color:#f92672>from</span> logging.handlers <span style=color:#f92672>import</span> RotatingFileHandler
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>log_format <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;</span><span style=color:#e6db74>%(asctime)s</span><span style=color:#e6db74> - </span><span style=color:#e6db74>%(name)s</span><span style=color:#e6db74> - </span><span style=color:#e6db74>%(levelname)s</span><span style=color:#e6db74> - </span><span style=color:#e6db74>%(message)s</span><span style=color:#e6db74>&#39;</span>
-</span></span><span style=display:flex><span>_loggers <span style=color:#f92672>=</span> {}  <span style=color:#75715e># 로거 캐시</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>get_stream_handler</span>():
-</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;Stream 핸들러&#34;&#34;&#34;</span>
-</span></span><span style=display:flex><span>    console_handler <span style=color:#f92672>=</span> logging<span style=color:#f92672>.</span>StreamHandler()
-</span></span><span style=display:flex><span>    console_handler<span style=color:#f92672>.</span>setLevel(logging<span style=color:#f92672>.</span>DEBUG)
-</span></span><span style=display:flex><span>    console_handler<span style=color:#f92672>.</span>setFormatter(logging<span style=color:#f92672>.</span>Formatter(log_format))
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> console_handler
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>get_file_handler</span>(log_file<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;application.log&#39;</span>):
-</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;파일(Rotating) 핸들러&#34;&#34;&#34;</span>
-</span></span><span style=display:flex><span>    file_handler <span style=color:#f92672>=</span> RotatingFileHandler(
-</span></span><span style=display:flex><span>            log_file, 
-</span></span><span style=display:flex><span>            maxBytes<span style=color:#f92672>=</span><span style=color:#ae81ff>1024</span><span style=color:#f92672>*</span><span style=color:#ae81ff>1024</span>, <span style=color:#75715e># 1MB</span>
-</span></span><span style=display:flex><span>            backupCount<span style=color:#f92672>=</span><span style=color:#ae81ff>5</span>,
-</span></span><span style=display:flex><span>            encoding<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;utf-8&#39;</span>)
-</span></span><span style=display:flex><span>    file_handler<span style=color:#f92672>.</span>setLevel(logging<span style=color:#f92672>.</span>INFO)
-</span></span><span style=display:flex><span>    file_handler<span style=color:#f92672>.</span>setFormatter(logging<span style=color:#f92672>.</span>Formatter(log_format))
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> file_handler
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>get_logger</span>(name):
-</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;로거 생성 (중복 방지)&#34;&#34;&#34;</span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> name <span style=color:#f92672>in</span> _loggers:
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> _loggers[name]
-</span></span><span style=display:flex><span>    
-</span></span><span style=display:flex><span>    logger <span style=color:#f92672>=</span> logging<span style=color:#f92672>.</span>getLogger(name)
-</span></span><span style=display:flex><span>    
-</span></span><span style=display:flex><span>    <span style=color:#75715e># 핸들러가 이미 있는지 확인</span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> logger<span style=color:#f92672>.</span>handlers:
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>setLevel(logging<span style=color:#f92672>.</span>DEBUG)
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>addHandler(get_stream_handler())
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>addHandler(get_file_handler())
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>propagate <span style=color:#f92672>=</span> <span style=color:#66d9ef>False</span>  <span style=color:#75715e># 루트 로거로 전파 방지</span>
-</span></span><span style=display:flex><span>    
-</span></span><span style=display:flex><span>    _loggers[name] <span style=color:#f92672>=</span> logger
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> logger
-</span></span><span style=display:flex><span>    
-</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
-</span></span><span style=display:flex><span>    <span style=color:#75715e># 로깅 설정 테스트</span>
-</span></span><span style=display:flex><span>    logger <span style=color:#f92672>=</span> get_logger(__name__)
-</span></span><span style=display:flex><span>    
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>CustomFilter</span>(logging<span style=color:#f92672>.</span>Filter):
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filter</span>(self, record):
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#39;data-check&#39;</span> <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> record<span style=color:#f92672>.</span>msg
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>addFilter(CustomFilter())
-</span></span><span style=display:flex><span>    
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>debug(<span style=color:#e6db74>&#34;이것은 디버그 메시지입니다.&#34;</span>)
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;이것은 정보 메시지입니다.&#34;</span>)
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;[&#39;data-check&#39;] 이것은 정보 메시지입니다.&#34;</span>)
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>warning(<span style=color:#e6db74>&#34;이것은 경고 메시지입니다.&#34;</span>)
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>try</span>:
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>1</span> <span style=color:#f92672>/</span> <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>except</span> <span style=color:#a6e22e>ZeroDivisionError</span>:
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>error(<span style=color:#e6db74>&#34;이것은 오류 메시지입니다.&#34;</span>)
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>exception(<span style=color:#e6db74>&#34;예외가 발생했습니다!&#34;</span>)
-</span></span><span style=display:flex><span>        
-</span></span></code></pre></div><p>logging_config를 사용하는 main.py</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> logging
-</span></span><span style=display:flex><span><span style=color:#f92672>from</span> logging_config <span style=color:#f92672>import</span> get_logger
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#75715e># 모듈 레벨에서 로거 생성</span>
-</span></span><span style=display:flex><span>logger <span style=color:#f92672>=</span> get_logger(__name__)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>main</span>():
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>try</span>:
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;Program starts&#34;</span>)
-</span></span><span style=display:flex><span>        <span style=color:#75715e># 애플리케이션 로직</span>
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;Program finished successfully&#34;</span>)
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>except</span> <span style=color:#a6e22e>Exception</span> <span style=color:#66d9ef>as</span> e:
-</span></span><span style=display:flex><span>        logger<span style=color:#f92672>.</span>exception(<span style=color:#e6db74>&#34;Program failed: </span><span style=color:#e6db74>%s</span><span style=color:#e6db74>&#34;</span>, e)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
-</span></span><span style=display:flex><span>    main()
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#75715e># 결과 예시</span>
-</span></span><span style=display:flex><span><span style=color:#75715e># 2025-07-05 12:57:27,600 - __main__ - INFO - Program starts 라는 로그가 콘솔에 출력 및 application.log 란 로그파일에 저장된다</span>
+Python</a></div></div></div><div class="Box-body px-5 pb-5" style=z-index:1><article class="markdown-body entry-content container-lg"><p>로깅에 대한 기본적인 개념은 다음 공식문서를 통해 확인하였다.<br><a href=https://docs.python.org/3/howto/logging.html>Logging HOWTO — Python 3.13.5 documentation</a></p><h1 id=logging-을-이용한-로그관리>logging 을 이용한 로그관리</h1><h3 id=python-logging-모듈-주요-구성요소>Python logging 모듈 주요 구성요소</h3><ol><li><code>class logging.Logger</code><ul><li>Logger.setLevel(), Logger.addHandler(), Logger.addFilter() 등을 사용할 수 있게 한다.</li><li>Logger는 <strong><em>Singleton 패턴</em></strong> 이다. 즉, <code>getLogger</code>를 한다고 매번 새로운 instance가 return되는게 아니라 이미 그 이름으로 존재하는 Logger를 return 한다.</li><li>그리고 <strong><em>Observer 패턴</em></strong> 을 동시에 따르며, 로그 레코드가 생성될 때 로그 핸들러(Observer) 객체에 자동으로 알림(event catch)을 보냄. 로그 레코드 생성자는 로그 레코드가 생성되면 모든 등록된 옵저버(핸들러)에게 보낸다.</li><li>메시지를 생성하는 시점에 <strong><em>&ldquo;thread-safe&rdquo;</em></strong> 하게 처리된다.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=n>logger</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=s2>&#34;로거이름&#34;</span><span class=p>)</span>
+</span></span></code></pre></div></li><li><code>class logging.Filter</code><ul><li>출력될 로그를 필터링한다. 별도 클래스로 필터링 로직을 작성하고 이미 생성한 로거나 핸들러에 addFilter() 메서드로 추가한다.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>class</span> <span class=nc>CustomFilter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Filter</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>filter</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>record</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=s1>&#39;skip-this&#39;</span> <span class=ow>not</span> <span class=ow>in</span> <span class=n>record</span><span class=o>.</span><span class=n>msg</span>
+</span></span></code></pre></div></li><li><code>class logging.Formatter</code><ul><li>출력될 로그의 포맷을 설정하며 다양한 포맷이 있으므로 공식문서를 참고하는게 좋다.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl> <span class=n>formatter</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s1>&#39;</span><span class=si>%(asctime)s</span><span class=s1> - </span><span class=si>%(name)s</span><span class=s1> - </span><span class=si>%(levelname)s</span><span class=s1> - </span><span class=si>%(message)s</span><span class=s1>&#39;</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=c1># 결과 예시 </span>
+</span></span><span class=line><span class=cl><span class=c1># 2025-07-05 12:57:27,599 - src.trade_executor - INFO - This is message</span>
+</span></span></code></pre></div></li><li><code>class logging.Handler</code><ul><li>로그 메세지를 처리할 방식을 설정한다.</li><li>주로 StreamHandler(콘솔창에 로그 메세지 출력)와 FileHandler(로그 메세지 저장)를 사용한다.<ul><li>FileHandler의 경우 지정된 단일 파일에 계속 추가하여 로그 파일의 크기를 제한하지 않기 때문에 주의가 필요하며 이를 위해 RotatingFileHandler를 사용한다.</li><li>RotatingFileHandler는 로그 파일의 크기를 관리하고, 오래된 로그 파일을 일정 개수만큼만 유지하여 디스크 공간을 효율적으로 사용하게 해준다.</li></ul></li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=c1># 콘솔창에 출력하는 핸들러 설정</span>
+</span></span><span class=line><span class=cl><span class=n>console_handler</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>StreamHandler</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=c1># my_app.log 파일에 로그 기록</span>
+</span></span><span class=line><span class=cl><span class=n>file_handler</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>FileHandler</span><span class=p>(</span><span class=s1>&#39;my_app.log&#39;</span><span class=p>)</span> 
+</span></span><span class=line><span class=cl><span class=c1># maxBytes=1024*1024 (1MB), backupCount=3 (최대 3개의 백업 파일 유지)</span>
+</span></span><span class=line><span class=cl><span class=n>rotate_handler</span> <span class=o>=</span> <span class=n>RotatingFileHandler</span><span class=p>(</span><span class=s1>&#39;my_app_rotating.log&#39;</span><span class=p>,</span> <span class=n>maxBytes</span><span class=o>=</span><span class=mi>1024</span><span class=o>*</span><span class=mi>1024</span><span class=p>,</span> <span class=n>backupCount</span><span class=o>=</span><span class=mi>3</span><span class=p>)</span> 
+</span></span></code></pre></div></li></ol><h3 id=로그레벨>로그레벨</h3><ul><li>DEBUG<ul><li>개발/테스트 단계에서 각 기능이 올바르게 작동하는지 확인할 때 사용하는 수준, 실제 운영 중에 남기지 않을 로그</li></ul></li><li>INFO<ul><li>실제 운영 중인 프로그램을 실행할 때 발생하는 정상적인 이벤트 알림</li><li>각 기능의 시작, 종료 시점, 반드시 알아야하는 정보들을 INFO 수준으로</li></ul></li><li>WARNING<ul><li>현재는 괜찮지만 잠재적으로 문제가 될 수 있는 작동일 때 남기는 로그 수준</li><li>예를 들면 ML 모델의 예측값이 상정했던 범위 밖</li><li>WARN 수준의 로그는 기록되더라도 프로그램의 실행이 중단되지 않음</li></ul></li><li>ERROR<ul><li>프로그램이 정상 작동하지 않았을 경우 사용</li><li>심각한 오류나 예외 상황에 대해서만 사용 -> 즉각적인 조치 필요</li><li>WARN 수준과 확실한 구분이 필요함</li></ul></li><li>CRITICAL<ul><li>심각한 오류이며 프로그램 자체가 계속 실행되지 않을 수 있을 때</li></ul></li></ul><p>Python의 logging 모듈의 기본 로깅 수준은 <code>WARNING</code> 이다. 그렇기에 이 수준 또는 그보다 심각한 수준의 일은 자동으로 로그로 남는다. basicConfig 메서드로 기본 로깅 수준 변경이 가능하다.</p><h3 id=python-로그-예시>Python 로그 예시</h3><p>로깅 모듈 작성 및 설정하는 logging_config.py</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=kn>import</span> <span class=nn>logging</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>logging.handlers</span> <span class=kn>import</span> <span class=n>RotatingFileHandler</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>log_format</span> <span class=o>=</span> <span class=s1>&#39;</span><span class=si>%(asctime)s</span><span class=s1> - </span><span class=si>%(name)s</span><span class=s1> - </span><span class=si>%(levelname)s</span><span class=s1> - </span><span class=si>%(message)s</span><span class=s1>&#39;</span>
+</span></span><span class=line><span class=cl><span class=n>_loggers</span> <span class=o>=</span> <span class=p>{}</span>  <span class=c1># 로거 캐시</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>get_stream_handler</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;Stream 핸들러&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>console_handler</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>StreamHandler</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=n>console_handler</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>DEBUG</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>console_handler</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>log_format</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>console_handler</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>get_file_handler</span><span class=p>(</span><span class=n>log_file</span><span class=o>=</span><span class=s1>&#39;application.log&#39;</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;파일(Rotating) 핸들러&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>file_handler</span> <span class=o>=</span> <span class=n>RotatingFileHandler</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>log_file</span><span class=p>,</span> 
+</span></span><span class=line><span class=cl>            <span class=n>maxBytes</span><span class=o>=</span><span class=mi>1024</span><span class=o>*</span><span class=mi>1024</span><span class=p>,</span> <span class=c1># 1MB</span>
+</span></span><span class=line><span class=cl>            <span class=n>backupCount</span><span class=o>=</span><span class=mi>5</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>encoding</span><span class=o>=</span><span class=s1>&#39;utf-8&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>file_handler</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>INFO</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>file_handler</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>log_format</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>file_handler</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>get_logger</span><span class=p>(</span><span class=n>name</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;로거 생성 (중복 방지)&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>name</span> <span class=ow>in</span> <span class=n>_loggers</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>_loggers</span><span class=p>[</span><span class=n>name</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>logger</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=n>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=c1># 핸들러가 이미 있는지 확인</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=ow>not</span> <span class=n>logger</span><span class=o>.</span><span class=n>handlers</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>DEBUG</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>get_stream_handler</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>get_file_handler</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>propagate</span> <span class=o>=</span> <span class=kc>False</span>  <span class=c1># 루트 로거로 전파 방지</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>_loggers</span><span class=p>[</span><span class=n>name</span><span class=p>]</span> <span class=o>=</span> <span class=n>logger</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>logger</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=vm>__name__</span> <span class=o>==</span> <span class=s2>&#34;__main__&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 로깅 설정 테스트</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span> <span class=o>=</span> <span class=n>get_logger</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>class</span> <span class=nc>CustomFilter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Filter</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=k>def</span> <span class=nf>filter</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>record</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span> <span class=s1>&#39;data-check&#39;</span> <span class=ow>not</span> <span class=ow>in</span> <span class=n>record</span><span class=o>.</span><span class=n>msg</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>addFilter</span><span class=p>(</span><span class=n>CustomFilter</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=s2>&#34;이것은 디버그 메시지입니다.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;이것은 정보 메시지입니다.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;[&#39;data-check&#39;] 이것은 정보 메시지입니다.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>warning</span><span class=p>(</span><span class=s2>&#34;이것은 경고 메시지입니다.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>try</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=mi>1</span> <span class=o>/</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>    <span class=k>except</span> <span class=ne>ZeroDivisionError</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>error</span><span class=p>(</span><span class=s2>&#34;이것은 오류 메시지입니다.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>exception</span><span class=p>(</span><span class=s2>&#34;예외가 발생했습니다!&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        
+</span></span></code></pre></div><p>logging_config를 사용하는 main.py</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=kn>import</span> <span class=nn>logging</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>logging_config</span> <span class=kn>import</span> <span class=n>get_logger</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 모듈 레벨에서 로거 생성</span>
+</span></span><span class=line><span class=cl><span class=n>logger</span> <span class=o>=</span> <span class=n>get_logger</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>main</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>    <span class=k>try</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;Program starts&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 애플리케이션 로직</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;Program finished successfully&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>except</span> <span class=ne>Exception</span> <span class=k>as</span> <span class=n>e</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>exception</span><span class=p>(</span><span class=s2>&#34;Program failed: </span><span class=si>%s</span><span class=s2>&#34;</span><span class=p>,</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=vm>__name__</span> <span class=o>==</span> <span class=s2>&#34;__main__&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>main</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 결과 예시</span>
+</span></span><span class=line><span class=cl><span class=c1># 2025-07-05 12:57:27,600 - __main__ - INFO - Program starts 라는 로그가 콘솔에 출력 및 application.log 란 로그파일에 저장된다</span>
 </span></span></code></pre></div><h1 id=loguru>loguru</h1><p>logging이 파이썬 기본 내장 라이브러리라면 loguru는 외부 라이브러리 이며 logging모듈에 의존하지 않고 <code>from scratch</code> 부터 새로 작성한 로깅 라이브러리이고 좀 더 간단하게 사용가능하다.</p><p>위에서 보다시피 logging모듈을 사용하려면 logging을 위한 여러 설정 및 기능을 알아야한다. 세세한 설정을 하기엔 logging모듈이 좋지만, 그럴필요 없을 경우 여러 handler를 설정하거나 옵션을 주는게 피곤할 수 있다.<br>예를 들면 logging 같은 경우</p><ul><li>handler 인스턴스를 설정하고</li><li>logger에 addHandler메서드를 통해 추가를 해줘야 한다.
-luguru같은 경우</li><li>add 메서드 한번에 가능하다</li></ul><p>그 외에도</p><ul><li>@logger.catch 데코레이터로 예외 자동처리를 하여 디버깅 편리</li><li>JSON포맷, 비동기 로깅, 다중 로그 대상 등 확장성 관련도 편리</li></ul><p>위 logging_config.py를 loguru로 변경한다면 다음과 같이 설정할 수 있다.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#75715e># loguru_config.py</span>
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> sys
-</span></span><span style=display:flex><span><span style=color:#f92672>from</span> pathlib <span style=color:#f92672>import</span> Path
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#f92672>from</span> loguru <span style=color:#f92672>import</span> logger
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>log_format <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;{time:YYYY-MM-DD HH:mm:ss} | </span><span style=color:#e6db74>{name}</span><span style=color:#e6db74> | </span><span style=color:#e6db74>{level}</span><span style=color:#e6db74> | </span><span style=color:#e6db74>{message}</span><span style=color:#e6db74>&#34;</span>
-</span></span><span style=display:flex><span>_LOGGERS <span style=color:#f92672>=</span> set()  <span style=color:#75715e># 캐시: 불필요한 add 제거용</span>
-</span></span><span style=display:flex><span>LOG_PATH <span style=color:#f92672>=</span> Path(<span style=color:#e6db74>&#34;log/loguru_application.log&#34;</span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_filter</span>(record):
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;data-check&#34;</span> <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> record[<span style=color:#e6db74>&#34;message&#34;</span>]
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_configure_once</span>():
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#e6db74>&#34;configured&#34;</span> <span style=color:#f92672>in</span> _LOGGERS:
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>remove()  <span style=color:#75715e># 기본 콘솔 제거</span>
-</span></span><span style=display:flex><span>    <span style=color:#75715e># 터미널에 출력을 위한 설정 - logging에 stream 핸들러와 유사</span>
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>add(sink<span style=color:#f92672>=</span>sys<span style=color:#f92672>.</span>stdout, level<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;DEBUG&#34;</span>, filter<span style=color:#f92672>=</span>_filter)
-</span></span><span style=display:flex><span>    <span style=color:#75715e># 로그 파일 저장을 위한 설정 - file 핸들러와 유사</span>
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>add(
-</span></span><span style=display:flex><span>        sink<span style=color:#f92672>=</span>LOG_PATH,  <span style=color:#75715e># log 저장 경로</span>
-</span></span><span style=display:flex><span>        level<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;INFO&#34;</span>,
-</span></span><span style=display:flex><span>        rotation<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;1 MB&#34;</span>,  <span style=color:#75715e># 1mb 단위 분할</span>
-</span></span><span style=display:flex><span>        retention<span style=color:#f92672>=</span><span style=color:#ae81ff>5</span>,  <span style=color:#75715e># backup을 5개까지 보관</span>
-</span></span><span style=display:flex><span>        encoding<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;utf-8&#34;</span>,
-</span></span><span style=display:flex><span>        format<span style=color:#f92672>=</span>log_format,
-</span></span><span style=display:flex><span>        enqueue<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>,  <span style=color:#75715e># 멀티프로세스 안전</span>
-</span></span><span style=display:flex><span>        filter<span style=color:#f92672>=</span>_filter,
-</span></span><span style=display:flex><span>    )
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    _LOGGERS<span style=color:#f92672>.</span>add(<span style=color:#e6db74>&#34;configured&#34;</span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>get_logger_</span>(name: str <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>):
-</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;
-</span></span></span><span style=display:flex><span><span style=color:#e6db74>    loguru는 logger 객체가 싱글턴이지만, .bind(name=…) 를 통해
-</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#39;이름&#39; 태그를 붙이면 모듈별 구분(logging.getLogger(name)과 유사)
-</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;&#34;&#34;</span>
-</span></span><span style=display:flex><span>    _configure_once()
-</span></span><span style=display:flex><span>    <span style=color:#75715e># 동일 name으로 bind 중복 생성 방지</span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> name <span style=color:#f92672>in</span> _LOGGERS:
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> logger<span style=color:#f92672>.</span>bind(name<span style=color:#f92672>=</span>name)
-</span></span><span style=display:flex><span>    _LOGGERS<span style=color:#f92672>.</span>add(name)
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> logger<span style=color:#f92672>.</span>bind(name<span style=color:#f92672>=</span>name)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#75715e># 테스트용 실행</span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
-</span></span><span style=display:flex><span>    log <span style=color:#f92672>=</span> get_logger_(__name__)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    log<span style=color:#f92672>.</span>debug(<span style=color:#e6db74>&#34;#&#34;</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>10</span> <span style=color:#f92672>+</span> <span style=color:#e6db74>&#34;프로그램 시작&#34;</span> <span style=color:#f92672>+</span> <span style=color:#e6db74>&#34;#&#34;</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>10</span>)
-</span></span><span style=display:flex><span>    log<span style=color:#f92672>.</span>debug(<span style=color:#e6db74>&#34;디버그 메시지&#34;</span>)
-</span></span><span style=display:flex><span>    log<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;정보 메시지&#34;</span>)
-</span></span><span style=display:flex><span>    log<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;[&#39;data-check&#39;] 정보 메시지&#34;</span>)
-</span></span><span style=display:flex><span>    log<span style=color:#f92672>.</span>warning(<span style=color:#e6db74>&#34;경고 메시지&#34;</span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#a6e22e>@logger.catch</span>(level<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;ERROR&#34;</span>, message<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;예외 발생&#34;</span>)
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>divide</span>():
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#ae81ff>1</span> <span style=color:#f92672>/</span> <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    divide()
-</span></span><span style=display:flex><span>    log<span style=color:#f92672>.</span>debug(<span style=color:#e6db74>&#34;#&#34;</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>10</span> <span style=color:#f92672>+</span> <span style=color:#e6db74>&#34;프로그램 종료&#34;</span> <span style=color:#f92672>+</span> <span style=color:#e6db74>&#34;#&#34;</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>10</span>)
-</span></span></code></pre></div><p>loguru_config 와 loguru를 사용하는 main.py 예시</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#f92672>from</span> loguru_config <span style=color:#f92672>import</span> get_logger_   
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>logger <span style=color:#f92672>=</span> get_logger_(__name__)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#a6e22e>@logger.catch</span>(level<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;ERROR&#34;</span>, message<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;예외 발생&#34;</span>)
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>main</span>():
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;Program starts&#34;</span>)
-</span></span><span style=display:flex><span>    <span style=color:#75715e># 애플리케이션 로직</span>
-</span></span><span style=display:flex><span>    logger<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#34;Program finished successfully&#34;</span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
-</span></span><span style=display:flex><span>    main()
+luguru같은 경우</li><li>add 메서드 한번에 가능하다</li></ul><p>그 외에도</p><ul><li>@logger.catch 데코레이터로 예외 자동처리를 하여 디버깅 편리</li><li>JSON포맷, 비동기 로깅, 다중 로그 대상 등 확장성 관련도 편리</li></ul><p>위 logging_config.py를 loguru로 변경한다면 다음과 같이 설정할 수 있다.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=c1># loguru_config.py</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>sys</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pathlib</span> <span class=kn>import</span> <span class=n>Path</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>loguru</span> <span class=kn>import</span> <span class=n>logger</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>log_format</span> <span class=o>=</span> <span class=s2>&#34;{time:YYYY-MM-DD HH:mm:ss} | </span><span class=si>{name}</span><span class=s2> | </span><span class=si>{level}</span><span class=s2> | </span><span class=si>{message}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>_LOGGERS</span> <span class=o>=</span> <span class=nb>set</span><span class=p>()</span>  <span class=c1># 캐시: 불필요한 add 제거용</span>
+</span></span><span class=line><span class=cl><span class=n>LOG_PATH</span> <span class=o>=</span> <span class=n>Path</span><span class=p>(</span><span class=s2>&#34;log/loguru_application.log&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>_filter</span><span class=p>(</span><span class=n>record</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=s2>&#34;data-check&#34;</span> <span class=ow>not</span> <span class=ow>in</span> <span class=n>record</span><span class=p>[</span><span class=s2>&#34;message&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>_configure_once</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=s2>&#34;configured&#34;</span> <span class=ow>in</span> <span class=n>_LOGGERS</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>remove</span><span class=p>()</span>  <span class=c1># 기본 콘솔 제거</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 터미널에 출력을 위한 설정 - logging에 stream 핸들러와 유사</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>add</span><span class=p>(</span><span class=n>sink</span><span class=o>=</span><span class=n>sys</span><span class=o>.</span><span class=n>stdout</span><span class=p>,</span> <span class=n>level</span><span class=o>=</span><span class=s2>&#34;DEBUG&#34;</span><span class=p>,</span> <span class=nb>filter</span><span class=o>=</span><span class=n>_filter</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 로그 파일 저장을 위한 설정 - file 핸들러와 유사</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>add</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>sink</span><span class=o>=</span><span class=n>LOG_PATH</span><span class=p>,</span>  <span class=c1># log 저장 경로</span>
+</span></span><span class=line><span class=cl>        <span class=n>level</span><span class=o>=</span><span class=s2>&#34;INFO&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=n>rotation</span><span class=o>=</span><span class=s2>&#34;1 MB&#34;</span><span class=p>,</span>  <span class=c1># 1mb 단위 분할</span>
+</span></span><span class=line><span class=cl>        <span class=n>retention</span><span class=o>=</span><span class=mi>5</span><span class=p>,</span>  <span class=c1># backup을 5개까지 보관</span>
+</span></span><span class=line><span class=cl>        <span class=n>encoding</span><span class=o>=</span><span class=s2>&#34;utf-8&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=nb>format</span><span class=o>=</span><span class=n>log_format</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=n>enqueue</span><span class=o>=</span><span class=kc>True</span><span class=p>,</span>  <span class=c1># 멀티프로세스 안전</span>
+</span></span><span class=line><span class=cl>        <span class=nb>filter</span><span class=o>=</span><span class=n>_filter</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>_LOGGERS</span><span class=o>.</span><span class=n>add</span><span class=p>(</span><span class=s2>&#34;configured&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>get_logger_</span><span class=p>(</span><span class=n>name</span><span class=p>:</span> <span class=nb>str</span> <span class=o>=</span> <span class=kc>None</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>    loguru는 logger 객체가 싱글턴이지만, .bind(name=…) 를 통해
+</span></span></span><span class=line><span class=cl><span class=s2>    &#39;이름&#39; 태그를 붙이면 모듈별 구분(logging.getLogger(name)과 유사)
+</span></span></span><span class=line><span class=cl><span class=s2>    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>_configure_once</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 동일 name으로 bind 중복 생성 방지</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>name</span> <span class=ow>in</span> <span class=n>_LOGGERS</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>logger</span><span class=o>.</span><span class=n>bind</span><span class=p>(</span><span class=n>name</span><span class=o>=</span><span class=n>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>_LOGGERS</span><span class=o>.</span><span class=n>add</span><span class=p>(</span><span class=n>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>logger</span><span class=o>.</span><span class=n>bind</span><span class=p>(</span><span class=n>name</span><span class=o>=</span><span class=n>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 테스트용 실행</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=vm>__name__</span> <span class=o>==</span> <span class=s2>&#34;__main__&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>log</span> <span class=o>=</span> <span class=n>get_logger_</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>log</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=s2>&#34;#&#34;</span> <span class=o>*</span> <span class=mi>10</span> <span class=o>+</span> <span class=s2>&#34;프로그램 시작&#34;</span> <span class=o>+</span> <span class=s2>&#34;#&#34;</span> <span class=o>*</span> <span class=mi>10</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>log</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=s2>&#34;디버그 메시지&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;정보 메시지&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;[&#39;data-check&#39;] 정보 메시지&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>log</span><span class=o>.</span><span class=n>warning</span><span class=p>(</span><span class=s2>&#34;경고 메시지&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@logger.catch</span><span class=p>(</span><span class=n>level</span><span class=o>=</span><span class=s2>&#34;ERROR&#34;</span><span class=p>,</span> <span class=n>message</span><span class=o>=</span><span class=s2>&#34;예외 발생&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>divide</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=mi>1</span> <span class=o>/</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>divide</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=n>log</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=s2>&#34;#&#34;</span> <span class=o>*</span> <span class=mi>10</span> <span class=o>+</span> <span class=s2>&#34;프로그램 종료&#34;</span> <span class=o>+</span> <span class=s2>&#34;#&#34;</span> <span class=o>*</span> <span class=mi>10</span><span class=p>)</span>
+</span></span></code></pre></div><p>loguru_config 와 loguru를 사용하는 main.py 예시</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>loguru_config</span> <span class=kn>import</span> <span class=n>get_logger_</span>   
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>logger</span> <span class=o>=</span> <span class=n>get_logger_</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nd>@logger.catch</span><span class=p>(</span><span class=n>level</span><span class=o>=</span><span class=s2>&#34;ERROR&#34;</span><span class=p>,</span> <span class=n>message</span><span class=o>=</span><span class=s2>&#34;예외 발생&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>main</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;Program starts&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 애플리케이션 로직</span>
+</span></span><span class=line><span class=cl>    <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&#34;Program finished successfully&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=vm>__name__</span> <span class=o>==</span> <span class=s2>&#34;__main__&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>main</span><span class=p>()</span>
 </span></span></code></pre></div></article></div></div></div></div></div></div></main></div><script type=application/javascript src=https://onejflow.github.io/js/toc.js></script><link rel=stylesheet href=https://onejflow.github.io/css/toc.css></div><div class="footer container-xl width-full p-responsive"><div class="position-relative d-flex flex-row-reverse flex-lg-row flex-wrap flex-lg-nowrap flex-justify-center flex-lg-justify-between flex-sm-items-center pt-6 pb-2 mt-6 f6 text-gray border-top border-gray-light"><a aria-label=Homepage title=GitHub class="footer-octicon d-none d-lg-block mr-lg-4" href=https://onejflow.github.io/><svg height="24" class="octicon octicon-mark-github" viewBox="0 0 16 16" width="24"><path fill-rule="evenodd" d="M8 0C3.58.0.0 3.58.0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38.0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95.0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12.0.0.67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15.0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48.0 1.07-.01 1.93-.01 2.2.0.21.15.46.55.38A8.013 8.013.0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a><ul class="list-style-none d-flex flex-wrap col-12 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0"><li class="mr-3 mr-lg-0">Theme by <a href=https://github.com/MeiK2333/github-style>github-style</a></li><li class="mr-3 mr-lg-0">GitHub and the Invertocat logo are trademarks of <a href=https://github.com/>GitHub, Inc.</a></li></ul></div><div class="d-flex flex-justify-center pb-6"><span class="f6 text-gray-light"></span></div></div></body><script type=application/javascript src=https://onejflow.github.io/js/github-style.js></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css integrity=sha384-wcIxkf4k558AjM3Yz3BBFQUbk/zgIYC2R0QpeeYb+TwlBVMrlgLqwRjRtGZiK7ww crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js integrity=sha384-hIoBPJpTUs74ddyc4bFZSM1TVlQDA60VBbJS0oA934VSz82sBx1X7kSx2ATBDIyd crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js integrity=sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk crossorigin=anonymous onload=renderMathInElement(document.body)></script><script type=text/javascript async src="https://cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML">MathJax.Hub.Config({tex2jax:{inlineMath:[["$","$"],["\\(","\\)"]],displayMath:[["$$","$$"],["[[","]]"]],processEscapes:!0,processEnvironments:!0,skipTags:["script","noscript","style","textarea","pre"],TeX:{equationNumbers:{autoNumber:"AMS"},extensions:["AMSmath.js","AMSsymbols.js"]}}}),MathJax.Hub.Queue(function(){var e,t=MathJax.Hub.getAllJax();for(e=0;e<t.length;e+=1)t[e].SourceElement().parentNode.className+=" has-jax"})</script><style>code.has-jax{font:inherit;font-size:100%;background:inherit;border:inherit;color:#515151}</style><script src=https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js></script><script type=application/javascript src=https://onejflow.github.io/js/search.js></script></html>
